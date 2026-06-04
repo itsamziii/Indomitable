@@ -10,6 +10,9 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
+    "ignoreDeprecations": "6.0",
     "strict": true
-  }
+  },
+  "include": ["src", "index.ts"],
+  "exclude": ["tests", "dist", "docs", "node_modules"]
 }

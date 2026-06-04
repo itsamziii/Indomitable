@@ -17,8 +17,12 @@
     "build": "npm run build:ts && npm run build:docs",
     "build:ts": "tsup --config tsup-config.json",
     "build:docs": "typedoc --theme default --readme README.md --out docs/ --entryPointStrategy expand src/.",
-    "lint": "eslint . --ext .ts --fix",
+    "lint": "eslint . --fix",
+    "test": "node --test --test-timeout=5000 --experimental-strip-types \"tests/**/*.test.ts\"",
     "prepare": "npm run build:ts"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "keywords": [
     "cluster",
@@ -47,14 +51,11 @@
     "discord.js": ">=14.14.x"
   },
   "devDependencies": {
-    "@augu/eslint-config": "^5.2.4",
-    "@types/node": "^20.14.10",
-    "@types/ws": "^8.5.11",
-    "@typescript-eslint/eslint-plugin": "^7.16.0",
-    "@typescript-eslint/parser": "^7.16.0",
-    "eslint": "^8.57.0",
+    "@types/node": "^25.9.1",
+    "eslint": "^9.39.4",
     "tsup": "^8.1.0",
-    "typedoc": "^0.26.4",
-    "typescript": "^5.5.3"
+    "typedoc": "^0.28.19",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.60.1"
   }
 }

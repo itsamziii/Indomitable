@@ -1,4 +1,4 @@
-name: Compile test
+name: Compile and test
 
 on:
   push:
@@ -15,7 +15,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [16.x]
+        node-version: [18.x, 20.x, 22.x, 24.x]
 
     steps:
     - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3
@@ -25,3 +25,20 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - run: npm install
     - run: npm run build
+
+  test:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [22.x, 24.x]
+
+    steps:
+    - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@17f8bd926464a1afa4c6a11669539e9c1ba77048 # tag=v3
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: npm install
+    - run: npm test

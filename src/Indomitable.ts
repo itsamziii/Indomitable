@@ -334,8 +334,7 @@ export class Indomitable extends EventEmitter {
         const shards = [ ...Array(this.shardCount).keys() ];
         const chunks = Chunk(shards, Math.round(this.shardCount as number / this.clusterCount));
         if (oldClusterCount < this.clusterCount) {
-            const count = this.clusterCount - oldClusterCount;
-            for (let id = this.clusterCount - 1; id < count; id++) {
+            for (let id = oldClusterCount; id < this.clusterCount; id++) {
                 const cluster = new ClusterManager({ id, shards: [], manager: this });
                 this.clusters.set(id, cluster);
             }

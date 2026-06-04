@@ -19,34 +19,37 @@ export class ConcurrencyManager {
      * Method to try and acquire a lock for identify
      */
     public async waitForIdentify(shardId: number): Promise<void> {
+        const abort = this.signals.get(shardId) || new AbortController();
+
+        if (!this.signals.has(shardId)) this.signals.set(shardId, abort);
+
+        const key = shardId % this.concurrency;
+        const state = this.queues.ensure(key, () => {
+            return {
+                queue: new AsyncQueue(),
+                resets: Number.POSITIVE_INFINITY
+            };
+        });
+
         try {
-            const abort = this.signals.get(shardId) || new AbortController();
+            await state.queue.wait({ signal: abort.signal });
+        } catch (error) {
+            // Aborted before acquiring the lock; AsyncQueue already removed our entry
+            this.signals.delete(shardId);
+            throw error;
+        }
 
-            if (!this.signals.has(shardId)) this.signals.set(shardId, abort);
+        try {
+            const difference = state.resets - Date.now();
 
-            const key = shardId % this.concurrency;
-            const state = this.queues.ensure(key, () => {
-                return {
-                    queue: new AsyncQueue(),
-                    resets: Number.POSITIVE_INFINITY
-                };
-            });
-            
-            try {
-                await state.queue.wait({ signal: abort.signal });
-
-                const difference = state.resets - Date.now();
-
-                if (difference <= 5000) {
-                    const time = difference + Math.random() * 1500;
-                    await Delay(time);
-                }
-
-                state.resets = Date.now() + 5_000;
-            } finally {
-                state.queue.shift();
+            if (difference <= 5000) {
+                const time = difference + Math.random() * 1500;
+                await Delay(time);
             }
+
+            state.resets = Date.now() + 5_000;
         } finally {
+            state.queue.shift();
             this.signals.delete(shardId);
         }
     }

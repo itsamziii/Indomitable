@@ -1,6 +1,5 @@
 import Https, { RequestOptions } from 'node:https';
 import Http from 'node:http';
-import { WebSocketShardEvents } from '@discordjs/ws';
 
 /**
  * Hoisted Environmental Variable for ease of fetching
@@ -11,28 +10,6 @@ export const EnvProcessData = {
     shardIds: (process.env.INDOMITABLE_SHARDS || '').split(' ').map(Number),
     shardCount: Number(process.env.INDOMITABLE_SHARDS_TOTAL || 0)
 };
-
-/**
- * Internal operation codes for the cluster -> thread
- */
-export enum MainStrategyOps {
-    CONNECT = 'connect',
-    DESTROY = 'destroy',
-    SEND = 'send',
-    STATUS = 'status',
-    RECONNECT = 'reconnect'
-}
-
-/**
- * Internal operation codes for the thread <- cluster
- */
-export enum ThreadStrategyOps {
-    REQUEST_IDENTIFY = 'requestIdentify',
-    CANCEL_IDENTIFY = 'cancelIdentify',
-    SHARD_EVENT = 'shardEvent',
-    RETRIEVE_SESSION = 'retrieveSession',
-    UPDATE_SESSION = 'updateSession'
-}
 
 /**
  * Internal operation codes
@@ -83,26 +60,6 @@ export enum RawIpcMessageType {
     MESSAGE = 'message',
     RESPONSE = 'response',
     ERROR = 'error'
-}
-
-/**
- * Type for raw ipc messages of cluster -> thread
- */
-export interface MainStrategyData {
-    op: MainStrategyOps,
-    data: any,
-    internal: true
-}
-
-/**
- * Type for raw ipc messages of cluster <- thread
- */
-export interface ThreadStrategyData {
-    op: ThreadStrategyOps,
-    event: WebSocketShardEvents,
-    data: any,
-    shardId: number,
-    internal: true
 }
 
 /**
