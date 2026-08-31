@@ -1,4 +1,4 @@
-import Https, { RequestOptions } from 'node:https';
+import Https, { type RequestOptions } from 'node:https';
 import Http from 'node:http';
 
 /**
@@ -228,6 +228,10 @@ export async function FetchSessions(token: string): Promise<SessionObject> {
 
 /**
  * Modify an array to contain the specified amount of chunks
+ * @remarks
+ * This slices the array into fixed size pieces, so the amount of pieces produced is not
+ * necessarily the amount you wanted. Use {@link PartitionShards} when you need an exact
+ * amount of balanced groups, such as when dividing shards across clusters
  * @param original An array of data
  * @param chunks The amount of chunks to transform into
  * @returns A modified array
@@ -237,6 +241,36 @@ export function Chunk(original: any[], chunks: number): any[] {
     for (let i = 0; i < original.length; i += chunks)
         array.push(original.slice(i , i + chunks));
     return array;
+}
+
+/**
+ * Splits the websocket shard ids across the given amount of clusters as evenly as possible
+ * @remarks
+ * Every shard id in [0, shardCount) is assigned to exactly one cluster, each cluster receives a
+ * contiguous ascending range, and the group sizes never differ by more than one, with the bigger
+ * groups placed first. Prefer this over {@link Chunk} when dividing shards, since a fixed chunk
+ * size does not reliably produce exactly clusterCount groups and can silently drop shards
+ * @param shardCount The total amount of websocket shards to divide
+ * @param clusterCount The amount of clusters to divide the shards into
+ * @returns An array with exactly clusterCount entries, each an array of shard ids
+ */
+export function PartitionShards(shardCount: number, clusterCount: number): number[][] {
+    const shards = Math.max(0, Math.trunc(shardCount));
+    const clusters = Math.max(0, Math.trunc(clusterCount));
+    if (clusters === 0) return [];
+    const base = Math.floor(shards / clusters);
+    const remainder = shards % clusters;
+    const partitions: number[][] = [];
+    let start = 0;
+    for (let id = 0; id < clusters; id++) {
+        const size = base + (id < remainder ? 1 : 0);
+        const partition: number[] = [];
+        for (let shard = start; shard < start + size; shard++)
+            partition.push(shard);
+        partitions.push(partition);
+        start += size;
+    }
+    return partitions;
 }
 
 /**

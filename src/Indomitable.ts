@@ -7,8 +7,8 @@ import { ConcurrencyServer } from './concurrency/ConcurrencyServer';
 import { ShardClient } from './client/ShardClient';
 import { ClusterManager } from './manager/ClusterManager';
 import {
-    Chunk,
     FetchSessions,
+    PartitionShards,
     MakeAbortableRequest,
     AbortableData,
     InternalOps,
@@ -245,12 +245,10 @@ export class Indomitable extends EventEmitter {
         if (this.shardCount < this.clusterCount)
             this.clusterCount = this.shardCount;
         this.emit(LibraryEvents.DEBUG, `Starting ${this.shardCount} websocket shards across ${this.clusterCount} clusters`);
-        const shards = [ ...Array(this.shardCount).keys() ];
-        const chunks = Chunk(shards, Math.round(this.shardCount / this.clusterCount));
+        const partitions = PartitionShards(this.shardCount, this.clusterCount);
         Cluster.setupPrimary({ ...{ serialization: 'json' }, ...this.clusterSettings  });
         for (let id = 0; id < this.clusterCount; id++) {
-            const chunk = chunks.shift()!;
-            const cluster = new ClusterManager({ id, shards: chunk, manager: this });
+            const cluster = new ClusterManager({ id, shards: partitions[id], manager: this });
             this.clusters.set(id, cluster);
         }
         await this.addToSpawnQueue(...this.clusters.values());
@@ -331,8 +329,7 @@ export class Indomitable extends EventEmitter {
         this.emit(LibraryEvents.DEBUG, `Reconfigured Indomitable to use ${this.shardCount} shard(s)`);
         const oldClusterCount = Number(this.clusters.size);
         this.clusterCount = options.clusters || this.clusters.size;
-        const shards = [ ...Array(this.shardCount).keys() ];
-        const chunks = Chunk(shards, Math.round(this.shardCount as number / this.clusterCount));
+        const partitions = PartitionShards(this.shardCount as number, this.clusterCount);
         if (oldClusterCount < this.clusterCount) {
             for (let id = oldClusterCount; id < this.clusterCount; id++) {
                 const cluster = new ClusterManager({ id, shards: [], manager: this });
@@ -349,8 +346,9 @@ export class Indomitable extends EventEmitter {
             }
         }
         this.emit(LibraryEvents.DEBUG, `Reconfigured Indomitable to use ${this.clusterCount} cluster(s) from ${oldClusterCount} cluster(s)`);
+        let partitionIndex = 0;
         for (const cluster of this.clusters.values()) {
-            cluster.shards = chunks.shift()!;
+            cluster.shards = partitions[partitionIndex++] ?? [];
         }
         this.emit(LibraryEvents.DEBUG, 'Clusters shard ranges reconfigured, moving to spawn queue');
         await this.addToSpawnQueue(...this.clusters.values());

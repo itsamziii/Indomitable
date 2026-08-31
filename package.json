@@ -18,7 +18,7 @@
     "build:ts": "tsup --config tsup-config.json",
     "build:docs": "typedoc --theme default --readme README.md --out docs/ --entryPointStrategy expand src/.",
     "lint": "eslint . --fix",
-    "test": "node --test --test-timeout=5000 --experimental-strip-types \"tests/**/*.test.ts\"",
+    "test": "node --test --test-timeout=5000 --experimental-transform-types \"tests/**/*.test.ts\"",
     "prepare": "npm run build:ts"
   },
   "engines": {
